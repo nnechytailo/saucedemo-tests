@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test'
 
-test.beforeEach(async ({ page }) => {
+test.beforeEach('Authentication', async ({ page }) => {
     const ACCEPTED_CREDS = [
         'standard_user',
         'secret_sauce'
@@ -22,8 +22,11 @@ test.describe('Shopping Cart', () => {
         const testItem = page.locator(`//a[@id='item_4_title_link']/div[@class='inventory_item_name']`)
         const addToCartButton = page.locator(`//div[@class='inventory_item'][1]/div[@class='pricebar']/button`)
         const shoppingCartButton = page.locator(`//div[@id='shopping_cart_container']`)
+        const itemsCounter = page.locator(`//div[@id='shopping_cart_container']//span`)
 
         await addToCartButton.click()
+        await expect(itemsCounter).toHaveCount(1)
+
         await shoppingCartButton.click()
         
         await expect(testItem).toBeVisible()
@@ -44,5 +47,42 @@ test.describe('Shopping Cart', () => {
 
         await removeButton.click()
         await expect(testItem).not.toBeVisible()
+    })
+
+    test('remove item from the cart in catalog', async ({ page }) => {
+        const addToCartButton = page.locator(`//div[@class='inventory_item'][1]/div[@class='pricebar']/button`)
+        const removeButton = page.locator(`//button[text()="REMOVE"]`)
+        const itemsCounter = page.locator(`//div[@id='shopping_cart_container']//span`)
+
+        await addToCartButton.click()
+        await expect(itemsCounter).toHaveCount(1)
+        await removeButton.click()
+        await expect(itemsCounter).toHaveCount(0)
+    })    
+})
+
+test.describe('Sorting', () => {
+    test('sorting by price in ASC', async ({ page}) => {
+        const sortDropdown = page.locator(`//select[@class='product_sort_container']`)
+        const price = page.locator(`//div[@class='inventory_item_price']`)
+        
+        await sortDropdown.selectOption({ label: 'Price (low to high)' })
+        const prices = (await price.allTextContents()).map(text => parseFloat(text.replace('$', '')))
+        
+        for (let i = 1; i < prices.length; i++) {
+            await expect(prices[i]).toBeGreaterThanOrEqual(prices[i - 1])
+        }
+    })
+
+    test('sorting by price in DESC', async ({ page}) => {
+        const sortDropdown = page.locator(`//select[@class='product_sort_container']`)
+        const price = page.locator(`//div[@class='inventory_item_price']`)
+        
+        await sortDropdown.selectOption({ label: 'Price (high to low)' })
+        const prices = (await price.allTextContents()).map(text => parseFloat(text.replace('$', '')))
+        
+        for (let i = 1; i < prices.length; i++) {
+            await expect(prices[i]).toBeLessThanOrEqual(prices[i - 1])
+        }
     })
 })
