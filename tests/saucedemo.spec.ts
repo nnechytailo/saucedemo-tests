@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test'
 
-test.beforeEach('Authentication', async ({ page }) => {
+test.beforeEach('Preconditions', async ({ page }) => {
     const ACCEPTED_CREDS = [
         'standard_user',
         'secret_sauce'
@@ -15,6 +15,64 @@ test.beforeEach('Authentication', async ({ page }) => {
     await usernameField.fill(ACCEPTED_CREDS[0])
     await passwordField.fill(ACCEPTED_CREDS[1])
     await loginButton.click()
+})
+
+test.describe('Authentication', () => {
+    const ACCEPTED_CREDS = [
+        'standard_user',
+        'secret_sauce'
+    ]
+    
+    test.only('login with valid credentials', async ({ page }) => {
+        await page.goto('https://www.saucedemo.com/v1/')
+
+        const usernameField = page.locator(`//input[@data-test='username']`)
+        const passwordField = page.locator(`//input[@data-test='password']`)
+        const loginButton = page.locator(`//input[@type='submit']`)
+        const inventory = page.locator(`//div[@class='inventory_container']`)
+
+        await usernameField.fill(ACCEPTED_CREDS[0])
+        await passwordField.fill(ACCEPTED_CREDS[1])
+        await loginButton.click()
+        
+        await expect(page).toHaveURL('https://www.saucedemo.com/v1/inventory.html')
+        await expect(inventory).toBeVisible()
+    })
+
+    test.only('login with invalid credentials', async ({ page }) => {
+        await page.goto('https://www.saucedemo.com/v1/')
+
+        const usernameField = page.locator(`//input[@data-test='username']`)
+        const passwordField = page.locator(`//input[@data-test='password']`)
+        const loginButton = page.locator(`//input[@type='submit']`)
+        const errorMessage = page.locator(`//h3[@data-test='error']`)
+
+        await usernameField.fill('test')
+        await passwordField.fill('test')
+        await loginButton.click()
+
+        await expect(errorMessage).toContainText('Epic sadface')
+    })
+
+    test.only('clear error message', async ({ page }) => {
+        await page.goto('https://www.saucedemo.com/v1/')
+
+        const usernameField = page.locator(`//input[@data-test='username']`)
+        const passwordField = page.locator(`//input[@data-test='password']`)
+        const loginButton = page.locator(`//input[@type='submit']`)
+        const errorMessage = page.locator(`//h3[@data-test='error']`)
+        const clearButton = page.locator(`//button[@class='error-button']`)
+
+        await usernameField.fill('test')
+        await passwordField.fill('test')
+        await loginButton.click()
+
+        await expect(errorMessage).toContainText('Epic sadface')
+        await expect(errorMessage).toBeVisible()
+
+        await clearButton.click()
+        await expect(errorMessage).not.toBeVisible()
+    })
 })
 
 test.describe('Shopping Cart', () => {
