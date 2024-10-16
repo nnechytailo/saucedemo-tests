@@ -144,3 +144,36 @@ test.describe('Sorting', () => {
         }
     })
 })
+
+test.describe('Checkout', () => {
+    test('should passing checkout', async ({ page }) => {
+        const addToCartButton = page.locator(`//div[@class='inventory_item'][1]/div[@class='pricebar']/button`)
+        const shoppingCartButton = page.locator(`//div[@id='shopping_cart_container']`)
+        const checkoutButton = page.locator(`//a[text()='CHECKOUT']`)
+        const firstName = page.locator(`//input[@id='first-name']`)
+        const lastName = page.locator(`//input[@id='last-name']`)
+        const postalCode = page.locator(`//input[@id='postal-code']`)
+        const continueButton = page.locator(`//input[@type='submit']`)
+        const overviewText = page.locator(`//div[@class='subheader']`)
+        const finishButton = page.locator(`//a[text()='FINISH']`)
+        const completeMessage = page.locator(`//h2[@class='complete-header']`)
+        const ponyImage = page.locator(`//img[@class='pony_express']`)
+
+        const successfulOrderMessage = "THANK YOU FOR YOUR ORDER"
+        
+        await addToCartButton.click()
+        await shoppingCartButton.click()
+        await checkoutButton.click()
+
+        await firstName.fill('Test')
+        await lastName.fill('Test')
+        await postalCode.fill('18030')
+        await continueButton.click()
+        await expect(overviewText).toHaveText('Checkout: Overview')
+        await finishButton.click()
+
+        await expect (completeMessage).toHaveText(successfulOrderMessage)
+        await expect(ponyImage).toBeVisible()
+        await expect(ponyImage).toHaveAttribute('src', 'img/pony-express.png')       
+    })
+})
