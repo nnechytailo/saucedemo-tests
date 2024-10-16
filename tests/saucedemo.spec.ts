@@ -176,4 +176,40 @@ test.describe('Checkout', () => {
         await expect(ponyImage).toBeVisible()
         await expect(ponyImage).toHaveAttribute('src', 'img/pony-express.png')       
     })
+
+    test('calculate total price', async ({ page }) => {
+        const addToCartButton = page.locator(`//div[@class='inventory_item'][1]/div[@class='pricebar']/button`)
+        const shoppingCartButton = page.locator(`//div[@id='shopping_cart_container']`)
+        const checkoutButton = page.locator(`//a[text()='CHECKOUT']`)
+        const firstName = page.locator(`//input[@id='first-name']`)
+        const lastName = page.locator(`//input[@id='last-name']`)
+        const overviewText = page.locator(`//div[@class='subheader']`)
+        const postalCode = page.locator(`//input[@id='postal-code']`)
+        const continueButton = page.locator(`//input[@type='submit']`)
+        const itemPrice = page.locator(`//a[@id='item_4_title_link']/parent::div/following-sibling::div[@class='pricebar']/div[@class='inventory_item_price']`)
+        const price = parseFloat((await itemPrice.allTextContents()).toString().replace('$', ''))
+
+        await addToCartButton.click()
+        await shoppingCartButton.click()
+        await checkoutButton.click()
+
+        await firstName.fill('Test')
+        await lastName.fill('Test')
+        await postalCode.fill('18030')
+        await continueButton.click()
+        await expect(overviewText).toHaveText('Checkout: Overview')
+
+        const taxPrice = page.locator(`//div[@class='summary_tax_label']`)
+        const tax = parseFloat((await taxPrice.allTextContents()).toString().replace('Tax: $', ''))
+
+        const totalPrice = page.locator(`//div[@class='summary_total_label']`)
+        const total = parseFloat((await totalPrice.allTextContents()).toString().replace('Total: $', ''))
+
+        await expect(tax).toEqual(parseFloat((price * 0.08).toFixed(2)))
+        await expect(total).toEqual(parseFloat((price + tax).toFixed(2)))
+        
+        console.log('Item total: ' + price)
+        console.log('Tax: ' + tax)
+        console.log('Total: ' + total)
+    })
 })
